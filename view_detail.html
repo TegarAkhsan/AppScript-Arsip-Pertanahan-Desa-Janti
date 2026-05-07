@@ -1,0 +1,96 @@
+<!-- Detail View -->
+<div id="view-detail" class="view-section">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <button class="btn btn-secondary" onclick="showView('arsip')" style="display: flex; align-items: center; gap: 8px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Kembali ke Daftar Arsip
+    </button>
+    <div style="display: flex; gap: 12px;">
+      <button class="btn btn-secondary" style="display: flex; align-items: center; gap: 8px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Edit</button>
+      <button class="btn btn-secondary" style="display: flex; align-items: center; gap: 8px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>Print</button>
+      <a id="detail-download" href="#" target="_blank" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Download
+      </a>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div class="card">
+      <div class="card-header"><h3>Preview Dokumen</h3></div>
+      <div class="preview-box" id="detail-preview" style="background: white;">
+        <p style="color: var(--text-muted);">Memuat preview...</p>
+      </div>
+    </div>
+
+    <div class="side-info">
+      <div class="info-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="font-size: 1rem;">Informasi Dokumen</h3>
+          <span class="status-badge" id="detail-status">Aktif</span>
+        </div>
+        <div class="info-item">
+          <label>Nomor Arsip</label>
+          <p id="detail-no">-</p>
+        </div>
+        <div class="info-item">
+          <label>Jenis Dokumen</label>
+          <p id="detail-jenis">-</p>
+        </div>
+        <div class="info-item">
+          <label>Tahun</label>
+          <p id="detail-tahun">-</p>
+        </div>
+        <div class="info-item">
+          <label>Tanggal Input</label>
+          <p id="detail-tanggal">-</p>
+        </div>
+        <div class="info-item">
+          <label>Operator</label>
+          <p>Admin Desa</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3 style="font-size: 1rem; margin-bottom: 20px;">Data Pemilik & Tanah</h3>
+        <div class="info-item">
+          <label>Nama Pemilik</label>
+          <p id="detail-nama">-</p>
+        </div>
+        <div class="info-item">
+          <label>Nomor Bidang/Persil</label>
+          <p id="detail-bidang">-</p>
+        </div>
+        <div class="info-item">
+          <label>Luas Tanah</label>
+          <p id="detail-luas">-</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+         <h3 style="font-size: 1rem; margin-bottom: 20px;">Alamat Tanah</h3>
+         <div class="info-item">
+            <label>Alamat Tanah</label>
+            <p id="detail-alamat">-</p>
+         </div>
+         <div class="info-item">
+            <label>Kecamatan</label>
+            <p id="detail-kecamatan">-</p>
+         </div>
+         <div class="info-item">
+            <label>Kabupaten</label>
+            <p id="detail-kabupaten">-</p>
+         </div>
+      </div>
+
+      <div class="info-card">
+         <h3 style="font-size: 1rem; margin-bottom: 20px;">Keterangan</h3>
+         <p id="detail-keterangan" style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">-</p>
+      </div>
+
+      <button class="btn btn-primary" id="detail-download-btn" style="width: 100%; justify-content: center; display: flex; align-items: center; gap: 8px;">
+        Download Dokumen
+      </button>
+    </div>
+  </div>
+</div>

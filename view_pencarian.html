@@ -1,0 +1,33 @@
+<!-- Search View -->
+<div id="view-pencarian" class="view-section">
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-header">
+      <div class="search-input-wrapper" style="margin-top: 0; width: 100%;">
+        <input type="text" placeholder="Cari berdasarkan nama, nomor arsip, atau nomor bidang..." id="search-input" oninput="filterSearchTable(this.value)">
+        <button class="search-btn" onclick="performSearch()">Cari</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="search-results-card">
+    <div class="card-header">
+      <h3>Data Arsip Keseluruhan</h3>
+    </div>
+    <div class="table-container">
+      <table id="search-table">
+        <thead>
+          <tr>
+            <th>Nomor Arsip</th>
+            <th>Nama Pemilik</th>
+            <th>Jenis Dokumen</th>
+            <th>No. Bidang</th>
+            <th>Luas</th>
+            <th>Tahun</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>

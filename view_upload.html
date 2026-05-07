@@ -1,0 +1,73 @@
+<!-- Upload View -->
+<div id="view-upload" class="view-section">
+  <div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div class="card-header">
+      <h3>Formulir Upload Dokumen Pertanahan</h3>
+    </div>
+    <form id="upload-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nama Pemilik Tanah *</label>
+          <input type="text" name="namaPemilik" placeholder="Masukkan nama pemilik" required>
+        </div>
+        <div class="form-group">
+          <label>Nomor Arsip *</label>
+          <input type="text" name="nomorArsip" id="input-nomor-arsip" placeholder="Masukkan nomor arsip (manual)" required>
+        </div>
+        <div class="form-group">
+          <label>Jenis Dokumen *</label>
+          <select name="jenisDokumen" id="form-jenis-dokumen" required>
+            <option value="">Memuat Jenis...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nomor Bidang Tanah / Persil *</label>
+          <input type="text" name="noBidang" placeholder="Contoh: 012/45" required>
+        </div>
+        <div class="form-group">
+          <label>Luas Tanah (m²) *</label>
+          <input type="number" name="luas" placeholder="Contoh: 250" required>
+        </div>
+        <div class="form-group">
+          <label>Tahun Dokumen *</label>
+          <select name="tahun" required>
+            <option value="">Pilih tahun</option>
+            <script>
+              const yr_upload = new Date().getFullYear();
+              for(let i=yr_upload; i>=1990; i--) document.write(`<option>${i}</option>`);
+            </script>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Alamat Tanah *</label>
+          <input type="text" name="alamat" placeholder="Masukkan alamat lengkap" required>
+        </div>
+        <div class="form-group">
+          <label>Kecamatan *</label>
+          <input type="text" name="kecamatan" required>
+        </div>
+        <div class="form-group">
+          <label>Kabupaten *</label>
+          <input type="text" name="kabupaten" required>
+        </div>
+        <div class="form-group full-width">
+          <label>Keterangan</label>
+          <textarea name="keterangan" rows="3" placeholder="Tambahkan keterangan jika ada..."></textarea>
+        </div>
+        <div class="form-group full-width">
+          <label>Upload File Dokumen (PDF/JPG) *</label>
+          <div class="upload-area" onclick="document.getElementById('file-input').click()">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <p id="file-name">Klik untuk memilih file</p>
+            <small>Format: PDF, JPG, PNG (Max 5MB)</small>
+            <input type="file" id="file-input" style="display: none;" onchange="handleFile(this)">
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Simpan Dokumen</button>
+        <button type="reset" class="btn btn-secondary">Reset Form</button>
+      </div>
+    </form>
+  </div>
+</div>
