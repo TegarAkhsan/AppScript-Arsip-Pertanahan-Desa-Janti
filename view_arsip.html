@@ -6,8 +6,10 @@
         <input type="text" placeholder="Cari nama pemilik atau nomor arsip..." style="max-width: 300px;" oninput="filterTable(this.value)">
         <select style="max-width: 200px;">
           <option>Semua Tahun</option>
-          <option>2026</option>
-          <option>2025</option>
+          <script>
+            const currentYearArs = new Date().getFullYear();
+            for(let i=currentYearArs; i>=2000; i--) document.write(`<option>${i}</option>`);
+          </script>
         </select>
         <select id="filter-arsip-jenis" style="max-width: 200px;" onchange="filterByType(this.value)">
           <option value="">Memuat Jenis...</option>
@@ -22,6 +24,7 @@
             <th>Nama Pemilik</th>
             <th>Jenis Dokumen</th>
             <th>No. Bidang</th>
+            <th>Kelas</th>
             <th>Luas</th>
             <th>Tahun</th>
             <th>Status</th>

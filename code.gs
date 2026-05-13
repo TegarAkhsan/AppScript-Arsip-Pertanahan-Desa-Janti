@@ -8,7 +8,7 @@ const CONFIG = {
   SHEET_NAME: 'DataArsip',
   USERS_SHEET: 'Users',
   JENIS_DOKUMEN_SHEET: 'JenisDokumen',
-  APP_TITLE: 'E-Arsip Desa Janti',
+  APP_TITLE: 'GeoJanti',
   // MASUKKAN ID SPREADSHEET ANDA DI SINI
   SPREADSHEET_ID: '1PhIAp30aTcOVPak4E1Nqs8vSSxcBIgE_Vo8hC5zui48' 
 };
@@ -31,7 +31,7 @@ function setup() {
   let sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
   const requiredHeaders = [
     'Timestamp', 'Nomor Arsip', 'Nama Pemilik', 'Jenis Dokumen', 
-    'No. Bidang/Persil', 'Luas', 'Tahun', 'Status', 'File ID', 'File URL',
+    'No. Bidang/Persil', 'Kelas', 'Luas', 'Tahun', 'Status', 'File ID', 'File URL',
     'Alamat', 'Kecamatan', 'Kabupaten', 'Keterangan'
   ];
 
@@ -303,6 +303,7 @@ function uploadFile(data) {
       data.namaPemilik,
       data.jenisDokumen,
       data.noBidang,
+      data.kelas || '-',
       data.luas,
       data.tahun,
       'Aktif',
@@ -339,11 +340,12 @@ function updateArchive(data) {
     if (rowIndex === -1) throw new Error("Data tidak ditemukan");
     
     // Update specific columns (excluding Timestamp and File Info if not changed)
-    sheet.getRange(rowIndex, 2, 1, 6).setValues([[
+    sheet.getRange(rowIndex, 2, 1, 7).setValues([[
       data.nomorArsip,
       data.namaPemilik,
       data.jenisDokumen,
       data.noBidang,
+      data.kelas || '-',
       data.luas,
       data.tahun
     ]]);
@@ -488,22 +490,22 @@ function getReportData() {
   const ss = getSS();
   const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
   const rows = sheet.getDataRange().getValues().slice(1);
-  const year = 2026; // Current display year
+  const year = new Date().getFullYear(); // Current display year
   
-  const data2026 = rows.filter(r => r[6].toString() === year.toString());
+  const dataCurrentYear = rows.filter(r => r[7].toString() === year.toString());
   
   const monthlyTrend = Array(12).fill(0).map((_, i) => {
-    const count = data2026.filter(r => new Date(r[0]).getMonth() === i).length;
+    const count = dataCurrentYear.filter(r => new Date(r[0]).getMonth() === i).length;
     return { month: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][i], count: count };
   });
 
   const jenisSummary = {};
-  data2026.forEach(r => {
+  dataCurrentYear.forEach(r => {
     const jenis = r[3];
     jenisSummary[jenis] = (jenisSummary[jenis] || 0) + 1;
   });
 
-  const total = data2026.length;
+  const total = dataCurrentYear.length;
   const summaryList = Object.keys(jenisSummary).map(k => ({
     jenis: k,
     jumlah: jenisSummary[k],
@@ -555,7 +557,7 @@ function createDummyData() {
     const date = new Date(now);
     date.setDate(now.getDate() - i);
     
-    const year = 2026;
+    const year = new Date().getFullYear();
     const lastNum = getLastNumber(sheet, year);
     const nextNum = (lastNum + 1).toString().padStart(4, '0');
     const nomorArsip = `ARS-${year}-${nextNum}`;

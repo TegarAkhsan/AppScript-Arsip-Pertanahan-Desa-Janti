@@ -25,6 +25,10 @@
           <input type="text" name="noBidang" placeholder="Contoh: 012/45" required>
         </div>
         <div class="form-group">
+          <label>Klasifikasi Kelas *</label>
+          <input type="text" name="kelas" placeholder="Masukkan kelas (isi saja)" required>
+        </div>
+        <div class="form-group">
           <label>Luas Tanah (m²) *</label>
           <input type="number" name="luas" placeholder="Contoh: 250" required>
         </div>
@@ -34,7 +38,7 @@
             <option value="">Pilih tahun</option>
             <script>
               const yr_upload = new Date().getFullYear();
-              for(let i=yr_upload; i>=1990; i--) document.write(`<option>${i}</option>`);
+              for(let i=yr_upload; i>=2000; i--) document.write(`<option>${i}</option>`);
             </script>
           </select>
         </div>

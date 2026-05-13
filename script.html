@@ -20,11 +20,10 @@
 
     // Update Header
     const titles = {
-      dashboard: { t: 'Dashboard', s: 'Sistem Informasi Arsip Pertanahan' },
-      arsip: { t: 'Arsip Pertanahan', s: 'Data Arsip Pertanahan Desa Janti' },
+      dashboard: { t: 'Dashboard', s: 'Sistem Informasi GeoJanti' },
+      arsip: { t: 'Pencarian Arsip', s: 'Cari Data Arsip Pertanahan' },
       upload: { t: isEditing ? 'Edit Dokumen' : 'Unggah Dokumen', s: isEditing ? 'Perbarui Data Arsip' : 'Input Data Arsip Baru' },
-      pencarian: { t: 'Pencarian Arsip', s: 'Cari Dokumen dengan Cepat' },
-      laporan: { t: 'Laporan', s: 'Sistem Informasi Arsip Pertanahan' },
+      laporan: { t: 'Laporan', s: 'Statistik dan Ringkasan Arsip' },
       pengguna: { t: 'Pengguna', s: 'Manajemen Akses Pengguna' },
       detail: { t: 'Detail Arsip', s: 'Informasi Lengkap Dokumen' }
     };
@@ -55,6 +54,7 @@
     document.getElementById('detail-tanggal').innerText = item['Timestamp'].split(' ')[0];
     document.getElementById('detail-nama').innerText = item['Nama Pemilik'];
     document.getElementById('detail-bidang').innerText = item['No. Bidang/Persil'];
+    document.getElementById('detail-kelas').innerText = item['Kelas'] || '-';
     document.getElementById('detail-luas').innerText = item['Luas'] + ' m²';
     document.getElementById('detail-alamat').innerText = item['Alamat'] || '-';
     document.getElementById('detail-kecamatan').innerText = item['Kecamatan'] || '-';
@@ -86,6 +86,7 @@
     form.namaPemilik.value = item['Nama Pemilik'];
     form.jenisDokumen.value = item['Jenis Dokumen'];
     form.noBidang.value = item['No. Bidang/Persil'];
+    form.kelas.value = item['Kelas'] || '';
     form.luas.value = item['Luas'];
     form.tahun.value = item['Tahun'];
     form.alamat.value = item['Alamat'];
@@ -151,6 +152,7 @@
       namaPemilik: formData.get('namaPemilik'),
       jenisDokumen: formData.get('jenisDokumen'),
       noBidang: formData.get('noBidang'),
+      kelas: formData.get('kelas'),
       luas: formData.get('luas'),
       tahun: formData.get('tahun'),
       alamat: formData.get('alamat'),
@@ -211,7 +213,7 @@
         document.querySelector('#stat-sertifikat + .stat-growth').innerText = data.sertifikatGrowth;
         document.getElementById('stat-sk').innerText = data.suratKeterangan;
         document.querySelector('#stat-sk + .stat-growth').innerText = data.skGrowth;
-        document.getElementById('stat-2026').innerText = data.tahunIni;
+        document.getElementById('stat-current-year').innerText = data.tahunIni;
 
         const tbody = document.querySelector('#recent-table tbody');
         tbody.innerHTML = data.recent.map(r => `
@@ -235,6 +237,7 @@
         <td>${r['Nama Pemilik']}</td>
         <td>${r['Jenis Dokumen']}</td>
         <td>${r['No. Bidang/Persil']}</td>
+        <td>${r['Kelas'] || '-'}</td>
         <td>${r['Luas']} m²</td>
         <td>${r['Tahun']}</td>
         <td><span class="status-badge">${r['Status']}</span></td>
@@ -243,10 +246,10 @@
              <button onclick="viewDetail('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: var(--primary);" title="View">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
              </button>
-             <button onclick="editArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: var(--text-muted);" title="Edit">
+             <button class="admin-only" onclick="editArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: var(--text-muted);" title="Edit">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
              </button>
-             <button onclick="deleteArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: #dc2626;" title="Delete">
+             <button class="admin-only" onclick="deleteArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: #dc2626;" title="Delete">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
              </button>
           </div>
@@ -260,7 +263,8 @@
     const filtered = window.currentArchives.filter(r => 
       (r['Nama Pemilik'] && r['Nama Pemilik'].toLowerCase().includes(q.toLowerCase())) || 
       (r['Nomor Arsip'] && r['Nomor Arsip'].toLowerCase().includes(q.toLowerCase())) ||
-      (r['No. Bidang/Persil'] && r['No. Bidang/Persil'].toString().toLowerCase().includes(q.toLowerCase()))
+      (r['No. Bidang/Persil'] && r['No. Bidang/Persil'].toString().toLowerCase().includes(q.toLowerCase())) ||
+      (r['Kelas'] && r['Kelas'].toString().toLowerCase().includes(q.toLowerCase()))
     );
     renderArchivesTable(filtered, 'arsip-table');
   }
@@ -270,7 +274,8 @@
     const filtered = window.currentArchives.filter(r => 
       (r['Nama Pemilik'] && r['Nama Pemilik'].toLowerCase().includes(q.toLowerCase())) || 
       (r['Nomor Arsip'] && r['Nomor Arsip'].toLowerCase().includes(q.toLowerCase())) ||
-      (r['No. Bidang/Persil'] && r['No. Bidang/Persil'].toString().toLowerCase().includes(q.toLowerCase()))
+      (r['No. Bidang/Persil'] && r['No. Bidang/Persil'].toString().toLowerCase().includes(q.toLowerCase())) ||
+      (r['Kelas'] && r['Kelas'].toString().toLowerCase().includes(q.toLowerCase()))
     );
     renderArchivesTable(filtered, 'search-table');
   }
@@ -302,83 +307,105 @@
     loadArchives('search-table');
   }
 
-  function exportToExcel() {
-    if (!window.currentArchives || window.currentArchives.length === 0) {
-      alert('Tidak ada data untuk diexport!');
-      return;
-    }
-
-    const yearFilter = document.getElementById('filter-rep-year').value;
-    const jenisFilter = document.getElementById('filter-rep-jenis').value;
-
-    const filteredData = window.currentArchives.filter(r => {
-      const matchYear = r['Tahun'].toString() === yearFilter;
-      const matchJenis = jenisFilter === 'Semua Jenis' || r['Jenis Dokumen'] === jenisFilter;
-      return matchYear && matchJenis;
-    });
-
-    if (filteredData.length === 0) {
-      alert('Tidak ada data yang sesuai dengan filter!');
-      return;
-    }
-    
-    const headers = Object.keys(filteredData[0]);
-    const csvContent = [
-      headers.join(','),
-      ...filteredData.map(row => headers.map(h => `"${row[h] || ''}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Laporan_Arsip_${yearFilter}_${jenisFilter.replace(/ /g, '_')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
   function exportToPDF() {
-    // For PDF with filter, we can trigger print but maybe highlight what's being printed
-    // Or we can create a temporary print view
     window.print();
   }
 
   function loadReport() {
-    toggleLoading(true);
-    google.script.run
-      .withSuccessHandler(data => {
-        toggleLoading(false);
-        document.getElementById('rep-total').innerText = data.total;
-        document.getElementById('rep-avg').innerText = data.avg;
-        document.getElementById('rep-month').innerText = data.thisMonth;
-
-        const tbody = document.getElementById('rep-summary-body');
-        tbody.innerHTML = data.summary.map(s => `
-          <tr>
-            <td>${s.jenis}</td>
-            <td style="text-align: right;">${s.jumlah}</td>
-            <td style="text-align: right;">${s.persentase}%</td>
-          </tr>
-        `).join('');
-        
-        tbody.innerHTML += `<tr style="font-weight: 700; background: #f8fafc;"><td>Total</td><td style="text-align: right;">${data.total}</td><td style="text-align: right;">100%</td></tr>`;
-
-        const trendBody = document.getElementById('rep-trend-body');
-        const max = Math.max(...data.trend.map(t => t.count), 1);
-        trendBody.innerHTML = data.trend.map(t => `
-          <div class="trend-row">
-            <span>${t.month}</span>
-            <span style="font-weight: 600;">${t.count}</span>
-            <div class="progress-bg">
-              <div class="progress-fill" style="width: ${(t.count / max) * 100}%"></div>
-            </div>
-          </div>
-        `).join('');
-      })
-      .getReportData();
+    if (!window.currentArchives) {
+      google.script.run
+        .withSuccessHandler(data => {
+          window.currentArchives = data;
+          updateReportUI();
+        })
+        .getArchives();
+      return;
+    }
+    updateReportUI();
   }
+
+  function updateReportUI() {
+    const yearFilter = document.getElementById('filter-rep-year').value;
+    const jenisFilter = document.getElementById('filter-rep-jenis').value;
+    const kelasFilter = document.getElementById('filter-rep-kelas').value.toLowerCase();
+    const persilFilter = document.getElementById('filter-rep-persil').value.toLowerCase();
+
+    const filtered = window.currentArchives.filter(r => {
+      const matchYear = !yearFilter || r['Tahun'].toString() === yearFilter;
+      const matchJenis = !jenisFilter || jenisFilter === 'Semua Jenis' || r['Jenis Dokumen'] === jenisFilter;
+      const matchKelas = !kelasFilter || (r['Kelas'] && r['Kelas'].toLowerCase().includes(kelasFilter));
+      const matchPersil = !persilFilter || (r['No. Bidang/Persil'] && r['No. Bidang/Persil'].toString().toLowerCase().includes(persilFilter));
+      return matchYear && matchJenis && matchKelas && matchPersil;
+    });
+
+    // Stats
+    document.getElementById('rep-total').innerText = filtered.length;
+    document.getElementById('rep-avg').innerText = Math.round(filtered.length / 12);
+    
+    const now = new Date();
+    const thisMonth = filtered.filter(r => {
+      const d = parseDate(r['Timestamp']);
+      return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+    document.getElementById('rep-month').innerText = thisMonth;
+
+    // Summary table
+    const summary = {};
+    filtered.forEach(r => {
+      summary[r['Jenis Dokumen']] = (summary[r['Jenis Dokumen']] || 0) + 1;
+    });
+
+    const tbody = document.getElementById('rep-summary-body');
+    tbody.innerHTML = Object.keys(summary).map(k => {
+      const count = summary[k];
+      const pct = Math.round((count / (filtered.length || 1)) * 100);
+      return `<tr><td>${k}</td><td style="text-align: right;">${count}</td><td style="text-align: right;">${pct}%</td></tr>`;
+    }).join('');
+    
+    if (filtered.length > 0) {
+      tbody.innerHTML += `<tr style="font-weight: 700; background: #f8fafc;"><td>Total</td><td style="text-align: right;">${filtered.length}</td><td style="text-align: right;">100%</td></tr>`;
+    }
+
+    // Trend
+    const trend = Array(12).fill(0).map((_, i) => {
+      return filtered.filter(r => {
+        const d = parseDate(r['Timestamp']);
+        return d && d.getMonth() === i;
+      }).length;
+    });
+
+    const trendBody = document.getElementById('rep-trend-body');
+    const max = Math.max(...trend, 1);
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    
+    trendBody.innerHTML = trend.map((count, i) => `
+      <div class="trend-row">
+        <span>${months[i]}</span>
+        <span style="font-weight: 600;">${count}</span>
+        <div class="progress-bg">
+          <div class="progress-fill" style="width: ${(count / max) * 100}%"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function parseDate(str) {
+    if (!str) return null;
+    const parts = str.split(' ')[0].split('/');
+    if (parts.length < 3) return null;
+    return new Date(parts[2], parts[1] - 1, parts[0]);
+  }
+
+  // Add event listeners to report filters
+  window.addEventListener('DOMContentLoaded', () => {
+    ['filter-rep-year', 'filter-rep-jenis', 'filter-rep-kelas', 'filter-rep-persil'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', updateReportUI);
+        el.addEventListener('change', updateReportUI);
+      }
+    });
+  });
 
   function loadUsers() {
     toggleLoading(true);
@@ -415,9 +442,27 @@
     }
   }
 
-  function loginDemo() {
+  function loginAs(role) {
     showAuth(null);
+    window.currentUser = { role: role };
+    document.querySelector('.user-details span').innerText = role;
+    document.querySelector('.user-details small').innerText = role.toLowerCase();
+    
+    if (role === 'TU') {
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+      document.querySelector('.nav-item[onclick*="upload"]').style.display = 'none';
+      document.querySelector('.nav-item[onclick*="pengguna"]').style.display = 'none';
+    } else {
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+      document.querySelector('.nav-item[onclick*="upload"]').style.display = 'flex';
+      document.querySelector('.nav-item[onclick*="pengguna"]').style.display = 'flex';
+    }
+    
     loadDashboard();
+  }
+
+  function loginDemo() {
+    loginAs('Administrator');
   }
 
   function toggleSidebar() {
