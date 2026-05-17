@@ -4,13 +4,13 @@
  */
 
 const CONFIG = {
-  FOLDER_ID: '1KulfsciZbhNAnU_sE7UUblVmaGL-xhAW',
+  FOLDER_ID: '1mTA7nNdKbgRmP_yMaoT0Y4P9SIlbpG1R',
   SHEET_NAME: 'DataArsip',
   USERS_SHEET: 'Users',
   JENIS_DOKUMEN_SHEET: 'JenisDokumen',
   APP_TITLE: 'GeoJanti',
   // MASUKKAN ID SPREADSHEET ANDA DI SINI
-  SPREADSHEET_ID: '1PhIAp30aTcOVPak4E1Nqs8vSSxcBIgE_Vo8hC5zui48' 
+  SPREADSHEET_ID: '1SC-a-7BWwggFdO7C5kEXaQMOGM5vTtwJSoYmO562hug' 
 };
 
 /**
