@@ -34,13 +34,7 @@
         </div>
         <div class="form-group">
           <label>Tahun Dokumen *</label>
-          <select name="tahun" required>
-            <option value="">Pilih tahun</option>
-            <script>
-              const yr_upload = new Date().getFullYear();
-              for(let i=yr_upload; i>=2000; i--) document.write(`<option>${i}</option>`);
-            </script>
-          </select>
+          <input type="number" name="tahun" placeholder="Contoh: 2026" required>
         </div>
         <div class="form-group">
           <label>Alamat Tanah *</label>

@@ -108,32 +108,31 @@ function setup() {
 
   // Setup Users
   let userSheet = ss.getSheetByName(CONFIG.USERS_SHEET);
+  const userHeaders = ['Nama', 'Username', 'Role', 'Status'];
+  
   if (!userSheet) {
     userSheet = ss.insertSheet(CONFIG.USERS_SHEET);
-    const userHeaders = ['Nama', 'Username', 'Role', 'Status'];
+    userSheet.getRange(1, 1, 1, userHeaders.length).setValues([userHeaders])
+             .setFontWeight('bold')
+             .setBackground('#10b981')
+             .setFontColor('white');
+  } else {
+    // Clear and reset the users sheet to strictly only contain the 3 requested roles
+    userSheet.clearContents();
     userSheet.getRange(1, 1, 1, userHeaders.length).setValues([userHeaders])
              .setFontWeight('bold')
              .setBackground('#10b981')
              .setFontColor('white');
   }
   
-  // Check and add missing default users (Admin, Kepdes, Sekdes, TU, Perangkat, Operator)
-  const userValues = userSheet.getDataRange().getValues();
-  const usernames = userValues.map(r => r[1]); // Username is column index 1
-  
   const defaultUsers = [
-    ['Admin Desa', 'admin', 'Administrator', 'Aktif'],
     ['Kepala Desa', 'kepdes', 'Kepdes', 'Aktif'],
     ['Sekretaris Desa', 'sekdes', 'Sekdes', 'Aktif'],
-    ['Tata Usaha', 'tu', 'TU', 'Aktif'],
-    ['Perangkat Desa 1', 'perangkat1', 'Perangkat', 'Aktif'],
-    ['Operator Arsip', 'operator', 'Operator', 'Aktif']
+    ['Tata Usaha', 'tu', 'TU', 'Aktif']
   ];
   
   defaultUsers.forEach(u => {
-    if (usernames.indexOf(u[1]) === -1) {
-      userSheet.appendRow(u);
-    }
+    userSheet.appendRow(u);
   });
 
   // Setup Jenis Dokumen

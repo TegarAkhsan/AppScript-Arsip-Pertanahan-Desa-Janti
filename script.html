@@ -460,6 +460,10 @@
     document.querySelector('.user-details span').innerText = role;
     document.querySelector('.user-details small').innerText = role.toLowerCase();
     
+    // Save session in localStorage
+    localStorage.setItem('geojanti_session_user', JSON.stringify(window.currentUser));
+    localStorage.setItem('geojanti_session_last_activity', Date.now().toString());
+    
     if (role === 'TU') {
       document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
       document.querySelector('.nav-item[onclick*="upload"]').style.display = 'none';
@@ -473,6 +477,13 @@
     loadDashboard();
   }
 
+  function logout() {
+    localStorage.removeItem('geojanti_session_user');
+    localStorage.removeItem('geojanti_session_last_activity');
+    window.currentUser = null;
+    showAuth('login');
+  }
+
   function loginDemo() {
     loginAs('Administrator');
   }
@@ -484,9 +495,31 @@
   // Auth Form Handlers
   document.getElementById('login-form').onsubmit = function(e) {
     e.preventDefault();
-    // Logic login - for now just hide and show dashboard
-    showAuth(null);
-    loadDashboard();
+    const username = this.username.value.toLowerCase().trim();
+    const password = this.password.value;
+    
+    let role = null;
+    if (username === 'kepdes') {
+      role = 'Kepdes';
+    } else if (username === 'sekdes') {
+      role = 'Sekdes';
+    } else if (username === 'tu') {
+      role = 'TU';
+    }
+    
+    // 1. Verifikasi Username
+    if (!role) {
+      showModal('Login Gagal', 'Username salah atau tidak terdaftar!', 'error');
+      return;
+    }
+    
+    // 2. Verifikasi Password
+    if (password !== 'DesaJanti') {
+      showModal('Login Gagal', 'Password salah! Silakan coba lagi.', 'error');
+      return;
+    }
+    
+    loginAs(role);
   };
   
   document.getElementById('register-form').onsubmit = function(e) {
@@ -547,12 +580,15 @@
       .getJenisDokumen();
   }
 
-  // --- Session Management ---
-  let lastActivityTime = Date.now();
+  // --- Session Management & Double Click Protection ---
   const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 Menit
 
   function updateActivity() {
-    lastActivityTime = Date.now();
+    const isAuthVisible = Array.from(document.querySelectorAll('.auth-view'))
+                              .some(v => v.style.display === 'block');
+    if (!isAuthVisible && window.currentUser) {
+      localStorage.setItem('geojanti_session_last_activity', Date.now().toString());
+    }
   }
 
   // Listen for activity
@@ -565,19 +601,94 @@
     const isAuthVisible = Array.from(document.querySelectorAll('.auth-view'))
                               .some(v => v.style.display === 'block');
     
-    if (!isAuthVisible) {
-      if (Date.now() - lastActivityTime > SESSION_TIMEOUT) {
-        showModal('Sesi Berakhir', 'Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit. Silakan login kembali.', 'error');
-        showAuth('login');
+    if (!isAuthVisible && window.currentUser) {
+      const sessionLastActivity = localStorage.getItem('geojanti_session_last_activity');
+      if (sessionLastActivity) {
+        const lastActivity = parseInt(sessionLastActivity, 10);
+        if (Date.now() - lastActivity > SESSION_TIMEOUT) {
+          // Clear session and logout
+          logout();
+          showModal('Sesi Berakhir', 'Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit. Silakan login kembali.', 'error');
+        }
+      } else {
+        logout();
       }
-    } else {
-      updateActivity(); // Always fresh activity on login screen
     }
   }, 10000); // Cek setiap 10 detik
 
+  // Global Double Click Protection for all buttons & clickables
+  document.addEventListener('click', function(e) {
+    let target = e.target;
+    while (target && target !== document.body) {
+      if (target.nodeType === 1) { // Ensure it's an element node
+        const isButton = target.tagName === 'BUTTON' || 
+                         target.getAttribute('type') === 'button' || 
+                         target.getAttribute('type') === 'submit' ||
+                         (target.classList && (
+                           target.classList.contains('btn') || 
+                           target.classList.contains('nav-item')
+                         ));
+        
+        if (isButton) {
+          if (target.getAttribute('data-clicked') === 'true' || target.disabled) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+          
+          // Use setTimeout to allow the click event to be fully processed by the browser
+          // before applying pointer-events: none to avoid blocking the initial action/submit.
+          const buttonEl = target;
+          buttonEl.setAttribute('data-clicked', 'true');
+          const oldPointerEvents = buttonEl.style.pointerEvents;
+          const oldOpacity = buttonEl.style.opacity;
+          
+          setTimeout(() => {
+            buttonEl.style.pointerEvents = 'none';
+            buttonEl.style.opacity = '0.6';
+          }, 0);
+          
+          // Re-enable after 1.5 seconds
+          setTimeout(() => {
+            buttonEl.removeAttribute('data-clicked');
+            buttonEl.style.pointerEvents = oldPointerEvents;
+            buttonEl.style.opacity = oldOpacity;
+          }, 1500);
+          
+          break;
+        }
+      }
+      target = target.parentElement;
+    }
+  }, true); // Capture phase to intercept before other click handlers run
+
   // Initial load
   window.onload = () => {
-    showAuth('login');
     loadJenisDokumen();
+    
+    // Check for active session
+    const sessionUser = localStorage.getItem('geojanti_session_user');
+    const sessionLastActivity = localStorage.getItem('geojanti_session_last_activity');
+    
+    if (sessionUser && sessionLastActivity) {
+      const now = Date.now();
+      const lastActivity = parseInt(sessionLastActivity, 10);
+      
+      if (now - lastActivity <= SESSION_TIMEOUT) {
+        try {
+          const userObj = JSON.parse(sessionUser);
+          if (userObj && userObj.role) {
+            // Restore session
+            loginAs(userObj.role);
+            return;
+          }
+        } catch (err) {
+          console.error("Gagal parse session user:", err);
+        }
+      }
+    }
+    
+    // Show login page if no active session
+    logout();
   };
 </script>
