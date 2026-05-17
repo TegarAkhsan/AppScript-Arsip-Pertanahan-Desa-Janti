@@ -399,7 +399,7 @@ function updateArchive(data) {
     
     let rowIndex = -1;
     for (let i = 1; i < values.length; i++) {
-      if (values[i][1] === data.oldNomorArsip) {
+      if (String(values[i][1]).trim() === String(data.oldNomorArsip).trim()) {
         rowIndex = i + 1;
         break;
       }
@@ -425,6 +425,32 @@ function updateArchive(data) {
       data.keterangan
     ]]);
 
+    // Handle new file upload if provided during edit
+    if (data.file && data.file.includes('base64')) {
+      const folder = DriveApp.getFolderById(CONFIG.FOLDER_ID);
+      const contentType = data.file.substring(5, data.file.indexOf(';'));
+      const bytes = Utilities.base64Decode(data.file.split(',')[1]);
+      const blob = Utilities.newBlob(bytes, contentType, data.fileName);
+      const file = folder.createFile(blob);
+      
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      
+      const fileId = file.getId();
+      const fileUrl = file.getUrl();
+      
+      sheet.getRange(rowIndex, 10, 1, 2).setValues([[fileId, fileUrl]]);
+      
+      // Delete old file from Drive if exists
+      const oldFileId = values[rowIndex - 1][9]; // Column 10 (index 9) is File ID
+      if (oldFileId && oldFileId.trim() !== '' && !oldFileId.startsWith('dummy-')) {
+        try {
+          DriveApp.getFileById(oldFileId).setTrashed(true);
+        } catch (e) {
+          // Ignore if file not found or couldn't be deleted
+        }
+      }
+    }
+
     return { success: true, message: 'Data berhasil diperbarui!' };
   } catch (error) {
     return { success: false, message: error.toString() };
@@ -437,8 +463,13 @@ function deleteArchive(nomorArsip) {
     const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
     const values = sheet.getDataRange().getValues();
     
+    // Clear the temporary A15 debug cell to keep the spreadsheet clean
+    try {
+      sheet.getRange('A15').clearContent();
+    } catch (e) {}
+    
     for (let i = 1; i < values.length; i++) {
-      if (values[i][1] === nomorArsip) {
+      if (String(values[i][1]).trim() === String(nomorArsip).trim()) {
         // Option 1: Mark as Deleted
         // sheet.getRange(i + 1, 8).setValue('Terhapus');
         
@@ -552,9 +583,7 @@ function getArchives() {
   });
 }
 
-function deleteArchive(id) {
-  // Logic to delete file from drive and row from sheet if needed
-}
+
 
 /**
  * Get Report Data

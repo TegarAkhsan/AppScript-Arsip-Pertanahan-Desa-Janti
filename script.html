@@ -45,7 +45,7 @@
 
   function viewDetail(id) {
     const allData = window.currentArchives || [];
-    const item = allData.find(d => d['Nomor Arsip'] === id);
+    const item = allData.find(d => String(d['Nomor Arsip']).trim() === String(id).trim());
     if (!item) return;
 
     document.getElementById('detail-no').innerText = item['Nomor Arsip'];
@@ -76,7 +76,7 @@
 
   function editArchive(id) {
     const allData = window.currentArchives || [];
-    const item = allData.find(d => d['Nomor Arsip'] === id);
+    const item = allData.find(d => String(d['Nomor Arsip']).trim() === String(id).trim());
     if (!item) return;
 
     isEditing = true;
@@ -113,9 +113,24 @@
     if (cancelBtn) cancelBtn.style.display = 'inline-block';
   }
 
+  let archiveToDelete = null;
+
   function deleteArchive(id) {
-    if (!confirm(`Apakah Anda yakin ingin menghapus arsip ${id}?`)) return;
+    archiveToDelete = id;
+    document.getElementById('confirm-modal-message').innerText = `Apakah Anda yakin ingin menghapus arsip ${id}?`;
+    document.getElementById('confirm-modal-overlay').style.display = 'flex';
+  }
+
+  function closeConfirmModal() {
+    document.getElementById('confirm-modal-overlay').style.display = 'none';
+    archiveToDelete = null;
+  }
+
+  function proceedDelete() {
+    if (!archiveToDelete) return;
     
+    const idToDelete = archiveToDelete;
+    closeConfirmModal();
     toggleLoading(true);
     google.script.run
       .withSuccessHandler(res => {
@@ -128,7 +143,7 @@
           showModal('Gagal Menghapus', res.message, 'error');
         }
       })
-      .deleteArchive(id);
+      .deleteArchive(idToDelete);
   }
 
   function handleFile(input) {
@@ -243,7 +258,7 @@
         // Gabungkan data recent ke window.currentArchives agar aksi tombol (View, Edit, Delete) bekerja di dashboard
         if (!window.currentArchives) window.currentArchives = [];
         data.recent.forEach(r => {
-          if (!window.currentArchives.some(x => x['Nomor Arsip'] === r['Nomor Arsip'])) {
+          if (!window.currentArchives.some(x => String(x['Nomor Arsip']).trim() === String(r['Nomor Arsip']).trim())) {
             window.currentArchives.push(r);
           }
         });
@@ -254,7 +269,10 @@
   }
 
   function renderArchivesTable(data, tableId = 'arsip-table') {
+    const isAdmin = !window.currentUser || window.currentUser.role !== 'TU';
+    const displayStyle = isAdmin ? 'inline-block' : 'none';
     const tbody = document.querySelector(`#${tableId} tbody`);
+    if (!tbody) return;
     tbody.innerHTML = data.map(r => `
       <tr>
         <td><strong>${r['Nomor Arsip']}</strong></td>
@@ -270,10 +288,10 @@
              <button onclick="viewDetail('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: var(--primary);" title="View">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
              </button>
-             <button class="admin-only" onclick="editArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: var(--text-muted);" title="Edit">
+             <button class="admin-only" onclick="editArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: var(--text-muted); display: ${displayStyle};" title="Edit">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
              </button>
-             <button class="admin-only" onclick="deleteArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: #dc2626;" title="Delete">
+             <button class="admin-only" onclick="deleteArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: #dc2626; display: ${displayStyle};" title="Delete">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
              </button>
           </div>
@@ -293,15 +311,15 @@
     const filtered = window.currentArchives.filter(r => {
       // 1. Search Name, Archive No, or Persil
       const matchSearch = !q || 
-        (r['Nama Pemilik'] && r['Nama Pemilik'].toLowerCase().includes(q)) || 
-        (r['Nomor Arsip'] && r['Nomor Arsip'].toLowerCase().includes(q)) ||
-        ((r['Nomor Persil'] || r['No. Bidang/Persil']) && (r['Nomor Persil'] || r['No. Bidang/Persil']).toString().toLowerCase().includes(q));
+        (r['Nama Pemilik'] && String(r['Nama Pemilik']).toLowerCase().includes(q)) || 
+        (r['Nomor Arsip'] && String(r['Nomor Arsip']).toLowerCase().includes(q)) ||
+        ((r['Nomor Persil'] || r['No. Bidang/Persil']) && String(r['Nomor Persil'] || r['No. Bidang/Persil']).toLowerCase().includes(q));
 
       // 2. Year Match
-      const matchYear = !year || (r['Tahun'] && r['Tahun'].toString().toLowerCase().includes(year));
+      const matchYear = !year || (r['Tahun'] && String(r['Tahun']).toLowerCase().includes(year));
 
       // 3. Class Match
-      const matchKelas = !kelas || ((r['Kelas Desa'] || r['Kelas']) && (r['Kelas Desa'] || r['Kelas']).toString().toLowerCase().includes(kelas));
+      const matchKelas = !kelas || ((r['Kelas Desa'] || r['Kelas']) && String(r['Kelas Desa'] || r['Kelas']).toLowerCase().includes(kelas));
 
       // 4. Type Match
       const matchType = !type || r['Jenis Dokumen'] === type;
@@ -369,10 +387,10 @@
     const persilFilter = document.getElementById('filter-rep-persil').value.toLowerCase().trim();
 
     const filtered = window.currentArchives.filter(r => {
-      const matchYear = !yearFilter || (r['Tahun'] && r['Tahun'].toString().toLowerCase().includes(yearFilter));
+      const matchYear = !yearFilter || (r['Tahun'] && String(r['Tahun']).toLowerCase().includes(yearFilter));
       const matchJenis = !jenisFilter || jenisFilter === 'Semua Jenis' || r['Jenis Dokumen'] === jenisFilter;
-      const matchKelas = !kelasFilter || ((r['Kelas Desa'] || r['Kelas']) && (r['Kelas Desa'] || r['Kelas']).toLowerCase().includes(kelasFilter));
-      const matchPersil = !persilFilter || ((r['Nomor Persil'] || r['No. Bidang/Persil']) && (r['Nomor Persil'] || r['No. Bidang/Persil']).toString().toLowerCase().includes(persilFilter));
+      const matchKelas = !kelasFilter || ((r['Kelas Desa'] || r['Kelas']) && String(r['Kelas Desa'] || r['Kelas']).toLowerCase().includes(kelasFilter));
+      const matchPersil = !persilFilter || ((r['Nomor Persil'] || r['No. Bidang/Persil']) && String(r['Nomor Persil'] || r['No. Bidang/Persil']).toLowerCase().includes(persilFilter));
       return matchYear && matchJenis && matchKelas && matchPersil;
     });
 
