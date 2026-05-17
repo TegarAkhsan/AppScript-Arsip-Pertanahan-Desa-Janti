@@ -105,6 +105,12 @@
     
     showView('upload');
     document.querySelector('#view-upload .btn-primary').innerText = 'Perbarui Dokumen';
+
+    // Sembunyikan tombol reset dan tunjukkan tombol batal edit
+    const resetBtn = document.getElementById('btn-reset-upload');
+    const cancelBtn = document.getElementById('btn-batal-edit');
+    if (resetBtn) resetBtn.style.display = 'none';
+    if (cancelBtn) cancelBtn.style.display = 'inline-block';
   }
 
   function deleteArchive(id) {
@@ -210,7 +216,19 @@
     isEditing = false;
     editNomorArsip = null;
     document.querySelector('#view-upload .btn-primary').innerText = 'Simpan Dokumen';
+    
+    // Kembalikan visibilitas tombol reset dan sembunyikan tombol batal edit
+    const resetBtn = document.getElementById('btn-reset-upload');
+    const cancelBtn = document.getElementById('btn-batal-edit');
+    if (resetBtn) resetBtn.style.display = 'inline-block';
+    if (cancelBtn) cancelBtn.style.display = 'none';
   }
+
+  function cancelEdit() {
+    resetUploadForm();
+    showView('arsip');
+  }
+
   function loadDashboard() {
     google.script.run
       .withSuccessHandler(data => {
@@ -221,6 +239,14 @@
         document.getElementById('stat-sk').innerText = data.suratKeterangan;
         document.querySelector('#stat-sk + .stat-growth').innerText = data.skGrowth;
         document.getElementById('stat-current-year').innerText = data.tahunIni;
+
+        // Gabungkan data recent ke window.currentArchives agar aksi tombol (View, Edit, Delete) bekerja di dashboard
+        if (!window.currentArchives) window.currentArchives = [];
+        data.recent.forEach(r => {
+          if (!window.currentArchives.some(x => x['Nomor Arsip'] === r['Nomor Arsip'])) {
+            window.currentArchives.push(r);
+          }
+        });
 
         renderArchivesTable(data.recent, 'recent-table');
       })

@@ -356,6 +356,10 @@ function uploadFile(data) {
       const bytes = Utilities.base64Decode(data.file.split(',')[1]);
       const blob = Utilities.newBlob(bytes, contentType, data.fileName);
       const file = folder.createFile(blob);
+      
+      // Mengatur agar file otomatis dapat dilihat oleh siapa saja yang memiliki link (seperti TU/Kepdes)
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      
       fileId = file.getId();
       fileUrl = file.getUrl();
     }
