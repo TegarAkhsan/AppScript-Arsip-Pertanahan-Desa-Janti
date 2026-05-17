@@ -619,4 +619,61 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+
+  /* Responsive Filters and Layout Enhancements */
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .filter-input, .filter-select {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    height: 42px;
+    background-color: white;
+  }
+
+  .filter-large {
+    flex: 2 1 250px;
+    max-width: 100%;
+  }
+
+  .filter-medium {
+    flex: 1 1 150px;
+    max-width: 100%;
+  }
+
+  .filter-small {
+    flex: 0.5 1 100px;
+    max-width: 100%;
+  }
+
+  /* Form and grid layout responsiveness */
+  @media (max-width: 768px) {
+    .filter-large, .filter-medium, .filter-small {
+      flex: 1 1 100%;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+      padding: 16px !important;
+    }
+    
+    .form-group.full-width {
+      grid-column: span 1 !important;
+    }
+
+    /* Make the report grid layouts responsive */
+    .view-section #view-laporan .card > div {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+      padding: 16px !important;
+    }
+  }
 </style>

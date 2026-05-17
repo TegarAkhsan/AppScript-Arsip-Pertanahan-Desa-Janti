@@ -53,8 +53,8 @@
     document.getElementById('detail-tahun').innerText = item['Tahun'];
     document.getElementById('detail-tanggal').innerText = item['Timestamp'].split(' ')[0];
     document.getElementById('detail-nama').innerText = item['Nama Pemilik'];
-    document.getElementById('detail-bidang').innerText = item['No. Bidang/Persil'];
-    document.getElementById('detail-kelas').innerText = item['Kelas'] || '-';
+    document.getElementById('detail-bidang').innerText = item['Nomor Persil'] || item['No. Bidang/Persil'] || '-';
+    document.getElementById('detail-kelas').innerText = item['Kelas Desa'] || item['Kelas'] || '-';
     document.getElementById('detail-luas').innerText = item['Luas'] + ' m²';
     document.getElementById('detail-alamat').innerText = item['Alamat'] || '-';
     document.getElementById('detail-kecamatan').innerText = item['Kecamatan'] || '-';
@@ -85,8 +85,16 @@
     const form = document.getElementById('upload-form');
     form.namaPemilik.value = item['Nama Pemilik'];
     form.jenisDokumen.value = item['Jenis Dokumen'];
-    form.noBidang.value = item['No. Bidang/Persil'];
-    form.kelas.value = item['Kelas'] || '';
+    if (form.nomorPersil) {
+      form.nomorPersil.value = item['Nomor Persil'] || item['No. Bidang/Persil'] || '';
+    } else if (form.noBidang) {
+      form.noBidang.value = item['Nomor Persil'] || item['No. Bidang/Persil'] || '';
+    }
+    if (form.kelasDesa) {
+      form.kelasDesa.value = item['Kelas Desa'] || item['Kelas'] || '';
+    } else if (form.kelas) {
+      form.kelas.value = item['Kelas Desa'] || item['Kelas'] || '';
+    }
     form.luas.value = item['Luas'];
     form.tahun.value = item['Tahun'];
     form.alamat.value = item['Alamat'];
@@ -151,8 +159,8 @@
       nomorArsip: formData.get('nomorArsip'),
       namaPemilik: formData.get('namaPemilik'),
       jenisDokumen: formData.get('jenisDokumen'),
-      noBidang: formData.get('noBidang'),
-      kelas: formData.get('kelas'),
+      nomorPersil: formData.get('nomorPersil') || formData.get('noBidang'),
+      kelasDesa: formData.get('kelasDesa') || formData.get('kelas'),
       luas: formData.get('luas'),
       tahun: formData.get('tahun'),
       alamat: formData.get('alamat'),
@@ -203,7 +211,6 @@
     editNomorArsip = null;
     document.querySelector('#view-upload .btn-primary').innerText = 'Simpan Dokumen';
   }
-
   function loadDashboard() {
     google.script.run
       .withSuccessHandler(data => {
@@ -215,16 +222,7 @@
         document.querySelector('#stat-sk + .stat-growth').innerText = data.skGrowth;
         document.getElementById('stat-current-year').innerText = data.tahunIni;
 
-        const tbody = document.querySelector('#recent-table tbody');
-        tbody.innerHTML = data.recent.map(r => `
-          <tr>
-            <td><strong>${r.no}</strong></td>
-            <td>${r.nama}</td>
-            <td>${r.jenis}</td>
-            <td>${r.tanggal}</td>
-            <td><span class="status-badge">${r.status}</span></td>
-          </tr>
-        `).join('');
+        renderArchivesTable(data.recent, 'recent-table');
       })
       .getDashboardData();
   }
@@ -233,11 +231,11 @@
     const tbody = document.querySelector(`#${tableId} tbody`);
     tbody.innerHTML = data.map(r => `
       <tr>
-        <td>${r['Nomor Arsip']}</td>
+        <td><strong>${r['Nomor Arsip']}</strong></td>
         <td>${r['Nama Pemilik']}</td>
         <td>${r['Jenis Dokumen']}</td>
-        <td>${r['No. Bidang/Persil']}</td>
-        <td>${r['Kelas'] || '-'}</td>
+        <td>${r['Nomor Persil'] || r['No. Bidang/Persil'] || '-'}</td>
+        <td>${r['Kelas Desa'] || r['Kelas'] || '-'}</td>
         <td>${r['Luas']} m²</td>
         <td>${r['Tahun']}</td>
         <td><span class="status-badge">${r['Status']}</span></td>
@@ -250,7 +248,7 @@
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
              </button>
              <button class="admin-only" onclick="deleteArchive('${r['Nomor Arsip']}')" style="background: none; border: none; cursor: pointer; color: #dc2626;" title="Delete">
-                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
              </button>
           </div>
         </td>
@@ -258,32 +256,46 @@
     `).join('');
   }
 
-  function filterTable(q) {
+  function applyArchiveFilters() {
     if (!window.currentArchives) return;
-    const filtered = window.currentArchives.filter(r => 
-      (r['Nama Pemilik'] && r['Nama Pemilik'].toLowerCase().includes(q.toLowerCase())) || 
-      (r['Nomor Arsip'] && r['Nomor Arsip'].toLowerCase().includes(q.toLowerCase())) ||
-      (r['No. Bidang/Persil'] && r['No. Bidang/Persil'].toString().toLowerCase().includes(q.toLowerCase())) ||
-      (r['Kelas'] && r['Kelas'].toString().toLowerCase().includes(q.toLowerCase()))
-    );
+    
+    const q = (document.getElementById('filter-arsip-nama-no')?.value || '').toLowerCase().trim();
+    const year = (document.getElementById('filter-arsip-tahun')?.value || '').toLowerCase().trim();
+    const kelas = (document.getElementById('filter-arsip-kelas')?.value || '').toLowerCase().trim();
+    const type = document.getElementById('filter-arsip-jenis')?.value || '';
+
+    const filtered = window.currentArchives.filter(r => {
+      // 1. Search Name, Archive No, or Persil
+      const matchSearch = !q || 
+        (r['Nama Pemilik'] && r['Nama Pemilik'].toLowerCase().includes(q)) || 
+        (r['Nomor Arsip'] && r['Nomor Arsip'].toLowerCase().includes(q)) ||
+        ((r['Nomor Persil'] || r['No. Bidang/Persil']) && (r['Nomor Persil'] || r['No. Bidang/Persil']).toString().toLowerCase().includes(q));
+
+      // 2. Year Match
+      const matchYear = !year || (r['Tahun'] && r['Tahun'].toString().toLowerCase().includes(year));
+
+      // 3. Class Match
+      const matchKelas = !kelas || ((r['Kelas Desa'] || r['Kelas']) && (r['Kelas Desa'] || r['Kelas']).toString().toLowerCase().includes(kelas));
+
+      // 4. Type Match
+      const matchType = !type || r['Jenis Dokumen'] === type;
+
+      return matchSearch && matchYear && matchKelas && matchType;
+    });
+
     renderArchivesTable(filtered, 'arsip-table');
+  }
+
+  function filterTable(q) {
+    applyArchiveFilters();
   }
 
   function filterSearchTable(q) {
-    if (!window.currentArchives) return;
-    const filtered = window.currentArchives.filter(r => 
-      (r['Nama Pemilik'] && r['Nama Pemilik'].toLowerCase().includes(q.toLowerCase())) || 
-      (r['Nomor Arsip'] && r['Nomor Arsip'].toLowerCase().includes(q.toLowerCase())) ||
-      (r['No. Bidang/Persil'] && r['No. Bidang/Persil'].toString().toLowerCase().includes(q.toLowerCase())) ||
-      (r['Kelas'] && r['Kelas'].toString().toLowerCase().includes(q.toLowerCase()))
-    );
-    renderArchivesTable(filtered, 'search-table');
+    applyArchiveFilters();
   }
 
   function filterByType(type) {
-    if (!window.currentArchives) return;
-    const filtered = type === "" ? window.currentArchives : window.currentArchives.filter(r => r['Jenis Dokumen'] === type);
-    renderArchivesTable(filtered, 'arsip-table');
+    applyArchiveFilters();
   }
 
   function loadArchives(tableId = 'arsip-table') {
@@ -325,16 +337,16 @@
   }
 
   function updateReportUI() {
-    const yearFilter = document.getElementById('filter-rep-year').value;
+    const yearFilter = document.getElementById('filter-rep-year').value.toLowerCase().trim();
     const jenisFilter = document.getElementById('filter-rep-jenis').value;
-    const kelasFilter = document.getElementById('filter-rep-kelas').value.toLowerCase();
-    const persilFilter = document.getElementById('filter-rep-persil').value.toLowerCase();
+    const kelasFilter = document.getElementById('filter-rep-kelas').value.toLowerCase().trim();
+    const persilFilter = document.getElementById('filter-rep-persil').value.toLowerCase().trim();
 
     const filtered = window.currentArchives.filter(r => {
-      const matchYear = !yearFilter || r['Tahun'].toString() === yearFilter;
+      const matchYear = !yearFilter || (r['Tahun'] && r['Tahun'].toString().toLowerCase().includes(yearFilter));
       const matchJenis = !jenisFilter || jenisFilter === 'Semua Jenis' || r['Jenis Dokumen'] === jenisFilter;
-      const matchKelas = !kelasFilter || (r['Kelas'] && r['Kelas'].toLowerCase().includes(kelasFilter));
-      const matchPersil = !persilFilter || (r['No. Bidang/Persil'] && r['No. Bidang/Persil'].toString().toLowerCase().includes(persilFilter));
+      const matchKelas = !kelasFilter || ((r['Kelas Desa'] || r['Kelas']) && (r['Kelas Desa'] || r['Kelas']).toLowerCase().includes(kelasFilter));
+      const matchPersil = !persilFilter || ((r['Nomor Persil'] || r['No. Bidang/Persil']) && (r['Nomor Persil'] || r['No. Bidang/Persil']).toString().toLowerCase().includes(persilFilter));
       return matchYear && matchJenis && matchKelas && matchPersil;
     });
 

@@ -31,28 +31,79 @@ function setup() {
   let sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
   const requiredHeaders = [
     'Timestamp', 'Nomor Arsip', 'Nama Pemilik', 'Jenis Dokumen', 
-    'No. Bidang/Persil', 'Kelas', 'Luas', 'Tahun', 'Status', 'File ID', 'File URL',
+    'Nomor Persil', 'Kelas Desa', 'Luas', 'Tahun', 'Status', 'File ID', 'File URL',
     'Alamat', 'Kecamatan', 'Kabupaten', 'Keterangan'
   ];
 
   if (!sheet) {
     sheet = ss.insertSheet(CONFIG.SHEET_NAME);
+    sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders])
          .setFontWeight('bold')
          .setBackground('#10b981')
          .setFontColor('white');
-    sheet.setFrozenRows(1);
   } else {
-    // Check for missing headers and add them
-    const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    requiredHeaders.forEach(h => {
-      if (existingHeaders.indexOf(h) === -1) {
-        sheet.getRange(1, sheet.getLastColumn() + 1).setValue(h)
-             .setFontWeight('bold')
-             .setBackground('#10b981')
-             .setFontColor('white');
+    // Robust self-healing migration for old 14-column layout or shifted existing data structures
+    const allValues = sheet.getDataRange().getValues();
+    const currentHeaders = allValues[0];
+    const dataRows = allValues.slice(1);
+    
+    let needsMigration = false;
+    if (currentHeaders.indexOf('Kelas Desa') === -1 || currentHeaders.length < 15) {
+      needsMigration = true;
+    } else {
+      // Check for shifted rows where 'Status' ('Aktif'/'Nonaktif') sits in the 'Tahun' column (index 7)
+      for (let i = 0; i < dataRows.length; i++) {
+        const r = dataRows[i];
+        if (r[7] === 'Aktif' || r[7] === 'Nonaktif') {
+          needsMigration = true;
+          break;
+        }
       }
-    });
+    }
+    
+    if (needsMigration) {
+      const migratedRows = dataRows.map(r => {
+        // If row is in old 14-column layout or is shifted (e.g. index 7 is 'Aktif'/'Nonaktif')
+        if (r.length <= 14 || r[7] === 'Aktif' || r[7] === 'Nonaktif' || typeof r[5] === 'number') {
+          return [
+            r[0], // Timestamp
+            r[1], // Nomor Arsip
+            r[2], // Nama Pemilik
+            r[3], // Jenis Dokumen
+            r[4], // Nomor Persil
+            '-',  // Kelas Desa (default placeholder)
+            r[5] || 0, // Luas (shifted from index 5)
+            r[6] || '', // Tahun (shifted from index 6)
+            r[7] || 'Aktif', // Status (shifted from index 7)
+            r[8] || '', // File ID (shifted from index 8)
+            r[9] || '', // File URL (shifted from index 9)
+            r[10] || '-', // Alamat (shifted from index 10)
+            r[11] || '-', // Kecamatan (shifted from index 11)
+            r[12] || '-', // Kabupaten (shifted from index 12)
+            r[13] || '-'  // Keterangan (shifted from index 13)
+          ];
+        }
+        return r; // Return unchanged if already correct format
+      });
+      
+      // Clear sheet content and rewrite with correct headers and migrated rows
+      sheet.clearContents();
+      sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders])
+           .setFontWeight('bold')
+           .setBackground('#10b981')
+           .setFontColor('white');
+      
+      if (migratedRows.length > 0) {
+        sheet.getRange(2, 1, migratedRows.length, requiredHeaders.length).setValues(migratedRows);
+      }
+    } else {
+      // Just ensure headers are correct
+      sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders])
+           .setFontWeight('bold')
+           .setBackground('#10b981')
+           .setFontColor('white');
+    }
   }
 
   // Setup Users
@@ -64,12 +115,26 @@ function setup() {
              .setFontWeight('bold')
              .setBackground('#10b981')
              .setFontColor('white');
-    
-    // Add default users
-    userSheet.appendRow(['Admin Desa', 'admin', 'Administrator', 'Aktif']);
-    userSheet.appendRow(['Perangkat Desa 1', 'perangkat1', 'Perangkat', 'Aktif']);
-    userSheet.appendRow(['Operator Arsip', 'operator', 'Operator', 'Aktif']);
   }
+  
+  // Check and add missing default users (Admin, Kepdes, Sekdes, TU, Perangkat, Operator)
+  const userValues = userSheet.getDataRange().getValues();
+  const usernames = userValues.map(r => r[1]); // Username is column index 1
+  
+  const defaultUsers = [
+    ['Admin Desa', 'admin', 'Administrator', 'Aktif'],
+    ['Kepala Desa', 'kepdes', 'Kepdes', 'Aktif'],
+    ['Sekretaris Desa', 'sekdes', 'Sekdes', 'Aktif'],
+    ['Tata Usaha', 'tu', 'TU', 'Aktif'],
+    ['Perangkat Desa 1', 'perangkat1', 'Perangkat', 'Aktif'],
+    ['Operator Arsip', 'operator', 'Operator', 'Aktif']
+  ];
+  
+  defaultUsers.forEach(u => {
+    if (usernames.indexOf(u[1]) === -1) {
+      userSheet.appendRow(u);
+    }
+  });
 
   // Setup Jenis Dokumen
   let jenisSheet = ss.getSheetByName(CONFIG.JENIS_DOKUMEN_SHEET);
@@ -302,8 +367,8 @@ function uploadFile(data) {
       data.nomorArsip,
       data.namaPemilik,
       data.jenisDokumen,
-      data.noBidang,
-      data.kelas || '-',
+      data.nomorPersil || data.noBidang,
+      data.kelasDesa || data.kelas || '-',
       data.luas,
       data.tahun,
       'Aktif',
@@ -344,13 +409,13 @@ function updateArchive(data) {
       data.nomorArsip,
       data.namaPemilik,
       data.jenisDokumen,
-      data.noBidang,
-      data.kelas || '-',
+      data.nomorPersil || data.noBidang,
+      data.kelasDesa || data.kelas || '-',
       data.luas,
       data.tahun
     ]]);
     
-    sheet.getRange(rowIndex, 11, 1, 4).setValues([[
+    sheet.getRange(rowIndex, 12, 1, 4).setValues([[
       data.alamat,
       data.kecamatan,
       data.kabupaten,
@@ -443,14 +508,19 @@ function getDashboardData() {
       currentMonthData.filter(r => r[3].toString().toLowerCase().includes('surat')).length,
       lastMonthData.filter(r => r[3].toString().toLowerCase().includes('surat')).length
     ),
-    tahunIni: rows.filter(r => r[6].toString() === thisYear.toString()).length,
-    recent: rows.slice(-5).reverse().map(r => ({
-      no: r[1],
-      nama: r[2],
-      jenis: r[3],
-      tanggal: Utilities.formatDate(new Date(r[0]), "GMT+7", "dd MMM yyyy"),
-      status: r[7]
-    }))
+    tahunIni: rows.filter(r => r[7].toString() === thisYear.toString()).length,
+    recent: rows.slice(-5).reverse().map(r => {
+      let obj = {};
+      const headers = data[0];
+      headers.forEach((h, i) => {
+        if (h === 'Timestamp') {
+          obj[h] = Utilities.formatDate(new Date(r[i]), "GMT+7", "dd/MM/yyyy HH:mm");
+        } else {
+          obj[h] = r[i];
+        }
+      });
+      return obj;
+    })
   };
   
   return stats;
@@ -460,7 +530,7 @@ function getDashboardData() {
  * Fetch All Archives
  */
 function getArchives() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSS();
   const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
@@ -528,7 +598,7 @@ function getReportData() {
  * Get User List
  */
 function getUsers() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSS();
   const sheet = ss.getSheetByName(CONFIG.USERS_SHEET);
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
@@ -545,7 +615,7 @@ function getUsers() {
  * Create 10 Dummy Data Entries
  */
 function createDummyData() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSS();
   const sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
   
   const dummyNames = ['Budi Santoso', 'Siti Aminah', 'Ahmad Wijaya', 'Dewi Lestari', 'Rudi Hartono', 'Rina Susanti', 'Hendra Gunawan', 'Maya Sari', 'Eko Prasetyo', 'Lusi Fitriani'];
@@ -568,6 +638,7 @@ function createDummyData() {
       dummyNames[i],
       dummyJenis[i],
       `01${i}/45`,
+      ['A', 'B', 'C', 'D'][i % 4],
       150 + (i * 20),
       year,
       'Aktif',

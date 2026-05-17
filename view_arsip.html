@@ -2,16 +2,11 @@
 <div id="view-arsip" class="view-section">
   <div class="card">
     <div class="card-header">
-      <div style="display: flex; gap: 16px; flex: 1;">
-        <input type="text" placeholder="Cari nama pemilik atau nomor arsip..." style="max-width: 300px;" oninput="filterTable(this.value)">
-        <select style="max-width: 200px;">
-          <option>Semua Tahun</option>
-          <script>
-            const currentYearArs = new Date().getFullYear();
-            for(let i=currentYearArs; i>=2000; i--) document.write(`<option>${i}</option>`);
-          </script>
-        </select>
-        <select id="filter-arsip-jenis" style="max-width: 200px;" onchange="filterByType(this.value)">
+      <div class="filter-row" style="flex: 1;">
+        <input type="text" id="filter-arsip-nama-no" placeholder="Cari nama pemilik, nomor arsip, atau nomor persil..." class="filter-input filter-large" oninput="applyArchiveFilters()">
+        <input type="text" id="filter-arsip-tahun" placeholder="Tahun..." class="filter-input filter-small" oninput="applyArchiveFilters()">
+        <input type="text" id="filter-arsip-kelas" placeholder="Cari Kelas Desa..." class="filter-input filter-medium" oninput="applyArchiveFilters()">
+        <select id="filter-arsip-jenis" class="filter-select filter-medium" onchange="applyArchiveFilters()">
           <option value="">Memuat Jenis...</option>
         </select>
       </div>
@@ -23,8 +18,8 @@
             <th>Nomor Arsip</th>
             <th>Nama Pemilik</th>
             <th>Jenis Dokumen</th>
-            <th>No. Bidang</th>
-            <th>Kelas</th>
+            <th>Nomor Persil</th>
+            <th>Kelas Desa</th>
             <th>Luas</th>
             <th>Tahun</th>
             <th>Status</th>
