@@ -8,17 +8,31 @@
       <p>Masuk ke sistem GeoJanti</p>
     </div>
     <form id="login-form">
+      <!-- Error alert container above the fields -->
+      <div id="login-alert" class="auth-alert auth-alert-danger">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span id="login-alert-message">Username atau password salah!</span>
+      </div>
+
       <div class="form-group">
         <label>Username</label>
-        <input type="text" name="username" placeholder="Masukkan username" required>
+        <input type="text" name="username" placeholder="Masukkan username" required autocomplete="username">
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" name="password" placeholder="Masukkan password" required>
+        <div class="password-wrapper">
+          <input type="password" name="password" id="login-password" placeholder="Masukkan password" required autocomplete="current-password">
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Tampilkan/Sembunyikan Password">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" class="eye-icon">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-        <label style="display: flex; align-items: center; gap: 8px; font-weight: 400; margin-bottom: 0;">
-          <input type="checkbox" style="width: auto;"> Ingat saya
+        <label style="display: flex; align-items: center; gap: 8px; font-weight: 400; margin-bottom: 0; cursor: pointer; user-select: none;">
+          <input type="checkbox" id="login-remember" style="width: auto; cursor: pointer;"> Ingat saya
         </label>
         <a href="#" onclick="showAuth('forgot')" style="font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: 600;">Lupa Password?</a>
       </div>

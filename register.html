@@ -8,21 +8,43 @@
       <p>Buat akun untuk akses E-Arsip</p>
     </div>
     <form id="register-form">
+      <!-- Error alert container above the fields -->
+      <div id="register-alert" class="auth-alert auth-alert-danger">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span id="register-alert-message">Terjadi kesalahan saat pendaftaran!</span>
+      </div>
+
       <div class="form-group">
         <label>Nama Lengkap</label>
-        <input type="text" name="nama" placeholder="Masukkan nama lengkap" required>
+        <input type="text" name="nama" placeholder="Masukkan nama lengkap" required autocomplete="name">
       </div>
       <div class="form-group">
         <label>Username</label>
-        <input type="text" name="username" placeholder="Buat username" required>
+        <input type="text" name="username" placeholder="Buat username" required autocomplete="username">
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" name="password" placeholder="Buat password" required>
+        <div class="password-wrapper">
+          <input type="password" name="password" id="register-password" placeholder="Buat password" required autocomplete="new-password">
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('register-password', this)" title="Tampilkan/Sembunyikan Password">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" class="eye-icon">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="form-group">
         <label>Konfirmasi Password</label>
-        <input type="password" name="confirm" placeholder="Ulangi password" required>
+        <div class="password-wrapper">
+          <input type="password" name="confirm" id="register-confirm" placeholder="Ulangi password" required autocomplete="new-password">
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('register-confirm', this)" title="Tampilkan/Sembunyikan Password">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" class="eye-icon">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
       </div>
       <button type="submit" class="btn btn-primary" style="width: 100%;">Daftar Sekarang</button>
     </form>

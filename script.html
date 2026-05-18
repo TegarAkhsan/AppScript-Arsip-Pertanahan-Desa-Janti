@@ -9,6 +9,12 @@
     const targetView = document.getElementById('view-' + viewId);
     if (targetView) targetView.classList.add('active');
     
+    // Close sidebar on mobile
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.classList.remove('active');
+    }
+    
     // Update Navigation highlight
     document.querySelectorAll('.nav-item').forEach(i => {
       i.classList.remove('active');
@@ -491,8 +497,67 @@
     document.getElementById('loading').style.display = show ? 'flex' : 'none';
   }
 
+  // Reusable password visibility toggler
+  function togglePasswordVisibility(fieldId, buttonEl) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    
+    const isPassword = field.type === 'password';
+    field.type = isPassword ? 'text' : 'password';
+    
+    const svg = buttonEl.querySelector('svg');
+    if (svg) {
+      if (isPassword) {
+        // Eye off/slash icon SVG
+        svg.innerHTML = `
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        `;
+      } else {
+        // Eye icon SVG
+        svg.innerHTML = `
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        `;
+      }
+    }
+  }
+
+  // Inline auth alert helpers
+  function showAuthAlert(formId, message) {
+    const alertEl = document.getElementById(formId + '-alert');
+    const msgEl = document.getElementById(formId + '-alert-message');
+    if (alertEl && msgEl) {
+      msgEl.innerText = message;
+      alertEl.style.display = 'flex';
+    }
+  }
+  
+  function hideAuthAlert(formId) {
+    const alertEl = document.getElementById(formId + '-alert');
+    if (alertEl) {
+      alertEl.style.display = 'none';
+    }
+  }
+
+  // Clear alerts on input
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#login-form input, #register-form input, #forgot-form input').forEach(input => {
+      input.addEventListener('input', () => {
+        hideAuthAlert('login');
+        hideAuthAlert('register');
+        hideAuthAlert('forgot');
+      });
+    });
+  });
+
   function showAuth(view) {
     document.querySelectorAll('.auth-view').forEach(v => v.style.display = 'none');
+    // Hide all inline alerts when switching auth screens
+    hideAuthAlert('login');
+    hideAuthAlert('register');
+    hideAuthAlert('forgot');
+    
     if (view) {
       document.getElementById('auth-' + view).style.display = 'block';
     }
@@ -539,8 +604,11 @@
   // Auth Form Handlers
   document.getElementById('login-form').onsubmit = function(e) {
     e.preventDefault();
+    hideAuthAlert('login');
     const username = this.username.value.toLowerCase().trim();
     const password = this.password.value;
+    const rememberCheckbox = document.getElementById('login-remember');
+    const rememberMe = rememberCheckbox ? rememberCheckbox.checked : false;
     
     let role = null;
     if (username === 'kepdes') {
@@ -553,14 +621,23 @@
     
     // 1. Verifikasi Username
     if (!role) {
-      showModal('Login Gagal', 'Username salah atau tidak terdaftar!', 'error');
+      showAuthAlert('login', 'Username salah atau tidak terdaftar!');
       return;
     }
     
     // 2. Verifikasi Password
     if (password !== 'DesaJanti') {
-      showModal('Login Gagal', 'Password salah! Silakan coba lagi.', 'error');
+      showAuthAlert('login', 'Password salah! Silakan coba lagi.');
       return;
+    }
+    
+    // 3. Handle Remember Me
+    if (rememberMe) {
+      localStorage.setItem('geojanti_remember_me', 'true');
+      localStorage.setItem('geojanti_saved_username', this.username.value.trim()); // Save raw input string
+    } else {
+      localStorage.removeItem('geojanti_remember_me');
+      localStorage.removeItem('geojanti_saved_username');
     }
     
     loginAs(role);
@@ -568,12 +645,22 @@
   
   document.getElementById('register-form').onsubmit = function(e) {
     e.preventDefault();
+    hideAuthAlert('register');
+    const password = this.password.value;
+    const confirm = this.confirm.value;
+    
+    if (password !== confirm) {
+      showAuthAlert('register', 'Password dan Konfirmasi Password tidak cocok!');
+      return;
+    }
+    
     alert('Pendaftaran berhasil! Silakan login.');
     showAuth('login');
   };
   
   document.getElementById('forgot-form').onsubmit = function(e) {
     e.preventDefault();
+    hideAuthAlert('forgot');
     alert('Permintaan reset telah dikirim ke administrator.');
     showAuth('login');
   };
@@ -646,6 +733,12 @@
                               .some(v => v.style.display === 'block');
     
     if (!isAuthVisible && window.currentUser) {
+      const rememberMe = localStorage.getItem('geojanti_remember_me') === 'true';
+      if (rememberMe) {
+        // Bypass inactivity auto-logout if Remember Me is active
+        return;
+      }
+      
       const sessionLastActivity = localStorage.getItem('geojanti_session_last_activity');
       if (sessionLastActivity) {
         const lastActivity = parseInt(sessionLastActivity, 10);
@@ -713,12 +806,34 @@
     // Check for active session
     const sessionUser = localStorage.getItem('geojanti_session_user');
     const sessionLastActivity = localStorage.getItem('geojanti_session_last_activity');
+    const rememberMe = localStorage.getItem('geojanti_remember_me') === 'true';
     
-    if (sessionUser && sessionLastActivity) {
-      const now = Date.now();
-      const lastActivity = parseInt(sessionLastActivity, 10);
+    // Pre-fill remember me credentials on login form
+    const savedUsername = localStorage.getItem('geojanti_saved_username');
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      if (savedUsername) {
+        loginForm.username.value = savedUsername;
+      }
+      const rememberCheckbox = document.getElementById('login-remember');
+      if (rememberCheckbox) {
+        rememberCheckbox.checked = rememberMe;
+      }
+    }
+    
+    if (sessionUser) {
+      let shouldRestore = false;
+      if (rememberMe) {
+        shouldRestore = true;
+      } else if (sessionLastActivity) {
+        const now = Date.now();
+        const lastActivity = parseInt(sessionLastActivity, 10);
+        if (now - lastActivity <= SESSION_TIMEOUT) {
+          shouldRestore = true;
+        }
+      }
       
-      if (now - lastActivity <= SESSION_TIMEOUT) {
+      if (shouldRestore) {
         try {
           const userObj = JSON.parse(sessionUser);
           if (userObj && userObj.role) {
