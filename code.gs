@@ -644,6 +644,103 @@ function getUsers() {
 }
 
 /**
+ * Add New User
+ */
+function addUser(userData) {
+  try {
+    const ss = getSS();
+    const sheet = ss.getSheetByName(CONFIG.USERS_SHEET);
+    const values = sheet.getDataRange().getValues();
+    
+    // Check for duplicate username (case-insensitive)
+    const username = String(userData.username).trim().toLowerCase();
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][1]).trim().toLowerCase() === username) {
+        return { success: false, message: 'Username "' + userData.username + '" sudah terdaftar!' };
+      }
+    }
+    
+    sheet.appendRow([
+      userData.nama,
+      userData.username.trim().toLowerCase(),
+      userData.role,
+      userData.status || 'Aktif'
+    ]);
+    
+    return { success: true, message: 'Pengguna baru berhasil ditambahkan!' };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * Update Existing User
+ */
+function updateUser(userData) {
+  try {
+    const ss = getSS();
+    const sheet = ss.getSheetByName(CONFIG.USERS_SHEET);
+    const values = sheet.getDataRange().getValues();
+    
+    let rowIndex = -1;
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][1]).trim().toLowerCase() === String(userData.oldUsername).trim().toLowerCase()) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      return { success: false, message: 'Pengguna tidak ditemukan!' };
+    }
+    
+    // Check if new username is already taken by another user
+    const newUsername = String(userData.username).trim().toLowerCase();
+    const oldUsername = String(userData.oldUsername).trim().toLowerCase();
+    if (newUsername !== oldUsername) {
+      for (let i = 1; i < values.length; i++) {
+        if (i + 1 !== rowIndex && String(values[i][1]).trim().toLowerCase() === newUsername) {
+          return { success: false, message: 'Username "' + userData.username + '" sudah terdaftar!' };
+        }
+      }
+    }
+    
+    sheet.getRange(rowIndex, 1, 1, 4).setValues([[
+      userData.nama,
+      newUsername,
+      userData.role,
+      userData.status
+    ]]);
+    
+    return { success: true, message: 'Data pengguna berhasil diperbarui!' };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * Delete User
+ */
+function deleteUser(username) {
+  try {
+    const ss = getSS();
+    const sheet = ss.getSheetByName(CONFIG.USERS_SHEET);
+    const values = sheet.getDataRange().getValues();
+    
+    const targetUsername = String(username).trim().toLowerCase();
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][1]).trim().toLowerCase() === targetUsername) {
+        sheet.deleteRow(i + 1);
+        return { success: true, message: 'Pengguna berhasil dihapus!' };
+      }
+    }
+    return { success: false, message: 'Pengguna tidak ditemukan' };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
  * Create 10 Dummy Data Entries
  */
 function createDummyData() {
